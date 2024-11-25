@@ -26,9 +26,9 @@ async function run(): Promise<void> {
     const appVersion = core.getInput('appVersion');
     const includeRelease = core.getBooleanInput('includeRelease');
     const includeDebug = core.getBooleanInput('includeDebug');
-    const includeAndroid = core.getBooleanInput('includeAndroid');
+    /*     const includeAndroid = core.getBooleanInput('includeAndroid');
     const includeIOS =
-      process.platform === 'darwin' && core.getBooleanInput('includeIOS');
+      process.platform === 'darwin' && core.getBooleanInput('includeIOS', {}); */
     const includeUpdaterJson = core.getBooleanInput('includeUpdaterJson');
     const updaterJsonKeepUniversal = core.getBooleanInput(
       'updaterJsonKeepUniversal',
@@ -51,6 +51,14 @@ async function run(): Promise<void> {
     // Not using getBooleanInput so we can differentiate between true,false,unset later.
     const updaterJsonPreferNsis =
       core.getInput('updaterJsonPreferNsis')?.toLowerCase() === 'true';
+
+    // mobile
+    const mobile = core.getBooleanInput('mobile');
+    const mobilestr = core.getInput('mobile').toLowerCase();
+    const android =
+      (process.platform === 'linux' && mobile) || mobilestr === 'android';
+    const ios =
+      process.platform === 'darwin' && (mobile || mobilestr === 'ios');
 
     // If releaseId is set we'll use this to upload the assets to.
     // If tagName is set we also require releaseName to create a new release.
@@ -86,29 +94,52 @@ async function run(): Promise<void> {
     const configArg =
       configArgIdx >= 0 ? [...args][configArgIdx + 1] : undefined;
 
+    // We need to split release and debug artifacts for the updater json
     const releaseArtifacts: Artifact[] = [];
     const debugArtifacts: Artifact[] = [];
     const mobileArtifacts: Artifact[] = [];
-    if (includeRelease) {
-      releaseArtifacts.push(
-        ...(await buildDesktop(projectPath, false, buildOptions, initOptions)),
-      );
+
+    if (!android && !ios) {
+      // desktop
+      if (includeRelease) {
+        releaseArtifacts.push(
+          ...(await buildDesktop(
+            projectPath,
+            false,
+            buildOptions,
+            initOptions,
+          )),
+        );
+      }
+      if (includeDebug) {
+        debugArtifacts.push(
+          ...(await buildDesktop(projectPath, true, buildOptions, initOptions)),
+        );
+      }
+    } else if (android) {
+      if (includeRelease) {
+        mobileArtifacts.push(
+          ...(await buildMobile(projectPath, true, false, buildOptions)),
+        );
+      }
+      if (includeDebug) {
+        mobileArtifacts.push(
+          ...(await buildMobile(projectPath, true, true, buildOptions)),
+        );
+      }
+    } else if (ios) {
+      if (includeRelease) {
+        mobileArtifacts.push(
+          ...(await buildMobile(projectPath, false, false, buildOptions)),
+        );
+      }
+      if (includeDebug) {
+        mobileArtifacts.push(
+          ...(await buildMobile(projectPath, false, true, buildOptions)),
+        );
+      }
     }
-    if (includeDebug) {
-      debugArtifacts.push(
-        ...(await buildDesktop(projectPath, true, buildOptions, initOptions)),
-      );
-    }
-    if (includeAndroid) {
-      mobileArtifacts.push(
-        ...(await buildMobile(projectPath, true, buildOptions)),
-      );
-    }
-    if (includeIOS) {
-      mobileArtifacts.push(
-        ...(await buildMobile(projectPath, false, buildOptions)),
-      );
-    }
+
     const artifacts = releaseArtifacts
       .concat(debugArtifacts)
       .concat(mobileArtifacts);

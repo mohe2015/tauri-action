@@ -9,11 +9,14 @@ import type { Artifact, BuildOptions } from './types';
 export async function buildProject(
   root: string,
   android: boolean,
+  debug: boolean,
   buildOpts: BuildOptions,
 ): Promise<Artifact[]> {
   const runner = await getRunner(root, buildOpts.tauriScript);
 
-  const tauriArgs = buildOpts.args ?? [];
+  const tauriArgs = debug
+    ? ['--debug', ...(buildOpts.args ?? [])]
+    : (buildOpts.args ?? []);
 
   const configArgIdx = [...tauriArgs].findIndex(
     (e) => e === '-c' || e === '--config',
