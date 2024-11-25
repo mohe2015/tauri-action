@@ -53,12 +53,14 @@ async function run(): Promise<void> {
       core.getInput('updaterJsonPreferNsis')?.toLowerCase() === 'true';
 
     // mobile
-    const mobile = core.getBooleanInput('mobile');
-    const mobilestr = core.getInput('mobile').toLowerCase();
+    const mobile = core.getInput('mobile').toLowerCase();
+    // android should work on all runners but for `mobile: true` we only enable it for ubuntu runners. `mobile: android` enables it for all runners.
     const android =
-      (process.platform === 'linux' && mobile) || mobilestr === 'android';
+      (process.platform === 'linux' && mobile === 'true') ||
+      mobile === 'android';
+    // iOS only works on macOS and therefore can be enabled the same with both `true` and `ios`
     const ios =
-      process.platform === 'darwin' && (mobile || mobilestr === 'ios');
+      process.platform === 'darwin' && (mobile === 'true' || mobile === 'ios');
 
     // If releaseId is set we'll use this to upload the assets to.
     // If tagName is set we also require releaseName to create a new release.
