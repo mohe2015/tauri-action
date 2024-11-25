@@ -77,9 +77,13 @@ export async function buildProject(
       join(artifactPaths, 'bundle/x86Debug/app-x86-debug.aab'),
     ].map((path) => ({ path, arch: 'mobile' }));
   } else {
-    const artifactPaths = join(info.tauriPath, 'gen/apple/app/build/arm64/');
+    const artifactPaths = join(info.tauriPath, 'gen/apple/app/build/');
     // TODO: Confirm where the iOS project name actually comes from. it may be time for a glob pattern here to get the ipa without knowing the name.
-    artifacts = [join(artifactPaths, `${info.cargoName}.ipa`)].map((path) => ({
+    artifacts = [
+      join(artifactPaths, `arm64/${info.name}.ipa`),
+      join(artifactPaths, `arm64-sim/${info.name}.ipa`),
+      join(artifactPaths, `/x86_64/${info.name}.ipa`),
+    ].map((path) => ({
       path,
       arch: 'mobile',
     }));
