@@ -27,7 +27,8 @@ async function run(): Promise<void> {
     const includeRelease = core.getBooleanInput('includeRelease');
     const includeDebug = core.getBooleanInput('includeDebug');
     const includeAndroid = core.getBooleanInput('includeAndroid');
-    const includeIOS = core.getBooleanInput('includeIOS');
+    const includeIOS =
+      process.platform === 'darwin' && core.getBooleanInput('includeIOS');
     const includeUpdaterJson = core.getBooleanInput('includeUpdaterJson');
     const updaterJsonKeepUniversal = core.getBooleanInput(
       'updaterJsonKeepUniversal',
