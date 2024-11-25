@@ -195,6 +195,7 @@ jobs:
           NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
         run: |
           cd ./.github/fixtures/example-with-tauri-v2
+          pnpm add -D @tauri-apps/cli
           pnpm tauri android init
 
       - name: init ios
@@ -203,6 +204,7 @@ jobs:
           APPLE_DEVELOPMENT_TEAM: 12345
         run: |
           cd ./.github/fixtures/example-with-tauri-v2
+          pnpm add -D @tauri-apps/cli
           pnpm tauri ios init
 
       - name: Preconfigured Tauri Project
