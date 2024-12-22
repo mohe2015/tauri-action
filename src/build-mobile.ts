@@ -49,11 +49,11 @@ export async function buildProject(
     );
     artifacts = [
       // unsinged release apks
-      join(artifactPaths, 'apk/universal/release/app-universal-unsigned.apk'),
-      join(artifactPaths, 'apk/arm64/release/app-arm64-unsigned.apk'),
-      join(artifactPaths, 'apk/arm/release/app-arm-unsigned.apk'),
-      join(artifactPaths, 'apk/x86_64/release/app-x86_64-unsigned.apk'),
-      join(artifactPaths, 'apk/x86/release/app-x86-unsigned.apk'),
+      join(artifactPaths, 'apk/universal/release/app-universal-release-unsigned.apk'),
+      join(artifactPaths, 'apk/arm64/release/app-arm64-release-unsigned.apk'),
+      join(artifactPaths, 'apk/arm/release/app-arm-release-unsigned.apk'),
+      join(artifactPaths, 'apk/x86_64/release/app-x86_64-release-unsigned.apk'),
+      join(artifactPaths, 'apk/x86/release/app-x86-release-unsigned.apk'),
       // signed release apks
       join(artifactPaths, 'apk/universal/release/app-universal-release.apk'),
       join(artifactPaths, 'apk/arm64/release/app-arm64-release.apk'),
