@@ -3,6 +3,7 @@ import {
   execCommand,
   getTauriDir,
   hasDependency,
+  retry,
   usesBun,
   usesPnpm,
   usesYarn,
@@ -23,6 +24,8 @@ class Runner {
     command: string[],
     commandOptions: string[],
     cwd?: string,
+    env?: Record<string, string>,
+    retryAttempts: number = 0,
   ): Promise<void> {
     const args: string[] = [];
 
@@ -40,7 +43,10 @@ class Runner {
 
     args.push(...commandOptions);
 
-    return execCommand(this.bin, args, { cwd });
+    return retry(
+      () => execCommand(this.bin, args, { cwd }, env),
+      retryAttempts + 1,
+    ) as Promise<void>;
   }
 }
 

@@ -28,11 +28,12 @@ function allReleases(
   );
 }
 
-export async function createRelease(
+/// Try to get release by tag. If there's none, releaseName is required to create one.
+export async function getOrCreateRelease(
   owner: string,
   repo: string,
   tagName: string,
-  releaseName: string,
+  releaseName?: string,
   body?: string,
   commitish?: string,
   draft = true,
@@ -91,18 +92,23 @@ export async function createRelease(
     // @ts-expect-error Catching errors in typescript is a headache
     if (error.status === 404 || error.message === 'release not found') {
       console.log(`Couldn't find release with tag ${tagName}. Creating one.`);
-      const createdRelease = await github.rest.repos.createRelease({
-        owner,
-        repo,
-        tag_name: tagName,
-        name: releaseName,
-        body: bodyFileContent || body,
-        draft,
-        prerelease,
-        target_commitish: commitish || context.sha,
-      });
 
-      release = createdRelease.data;
+      if (!releaseName) {
+        console.error('"releaseName" not set but required to create release.');
+      } else {
+        const createdRelease = await github.rest.repos.createRelease({
+          owner,
+          repo,
+          tag_name: tagName,
+          name: releaseName,
+          body: bodyFileContent || body,
+          draft,
+          prerelease,
+          target_commitish: commitish || context.sha,
+        });
+
+        release = createdRelease.data;
+      }
     } else {
       console.log(
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions

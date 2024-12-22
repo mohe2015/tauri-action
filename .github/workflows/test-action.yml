@@ -108,11 +108,11 @@ jobs:
         include:
           # desktop
           - platform: 'macos-latest'
-            args: '--verbose --target universal-apple-darwin'
+            args: '-vvv --target universal-apple-darwin'
           - platform: 'ubuntu-22.04'
-            args: '--verbose'
+            args: '-vvv'
           - platform: 'windows-latest'
-            args: '--verbose'
+            args: '-vvv'
           # mobile
           - platform: 'ubuntu-latest'
             args: '--verbose'
@@ -227,6 +227,7 @@ jobs:
           mobile: ${{ matrix.android || matrix.ios }}
           args: ${{ matrix.args }}
           updaterJsonKeepUniversal: true
+          retryAttempts: 1
 
       - name: Frontend-only Project
         uses: ./

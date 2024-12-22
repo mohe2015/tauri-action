@@ -5,7 +5,7 @@ import * as core from '@actions/core';
 import { context } from '@actions/github';
 import stringArgv from 'string-argv';
 
-import { createRelease } from './create-release';
+import { getOrCreateRelease } from './create-release';
 import { uploadAssets as uploadReleaseAssets } from './upload-release-assets';
 import { uploadVersionJSON } from './upload-version-json';
 import { buildProject as buildDesktop } from './build-desktop';
@@ -33,6 +33,7 @@ async function run(): Promise<void> {
     const updaterJsonKeepUniversal = core.getBooleanInput(
       'updaterJsonKeepUniversal',
     );
+    const retryAttempts = parseInt(core.getInput('retryAttempts') || '0', 10);
     const tauriScript = core.getInput('tauriScript');
     const args = stringArgv(core.getInput('args'));
     const bundleIdentifier = core.getInput('bundleIdentifier');
@@ -61,16 +62,6 @@ async function run(): Promise<void> {
     // iOS only works on macOS and therefore can be enabled the same with both `true` and `ios`
     const ios =
       process.platform === 'darwin' && (mobile === 'true' || mobile === 'ios');
-
-    // If releaseId is set we'll use this to upload the assets to.
-    // If tagName is set we also require releaseName to create a new release.
-    // If neither releaseId nor tagName are set we won't try to upload anything at the end.
-    if (!releaseId) {
-      if (Boolean(tagName) && !releaseName)
-        throw new Error(
-          '`releaseName` is required if `tagName` is set when creating a release.',
-        );
-    }
 
     const buildOptions: BuildOptions = {
       tauriScript,
@@ -110,12 +101,19 @@ async function run(): Promise<void> {
             false,
             buildOptions,
             initOptions,
+            retryAttempts,
           )),
         );
       }
       if (includeDebug) {
         debugArtifacts.push(
-          ...(await buildDesktop(projectPath, true, buildOptions, initOptions)),
+          ...(await buildDesktop(
+            projectPath,
+            true,
+            buildOptions,
+            initOptions,
+            retryAttempts,
+          )),
         );
       }
     } else if (android) {
@@ -147,7 +145,7 @@ async function run(): Promise<void> {
       .concat(mobileArtifacts);
 
     if (artifacts.length === 0) {
-      if (releaseId || tagName || releaseName) {
+      if (releaseId || tagName) {
         throw new Error('No artifacts were found.');
       } else {
         console.log(
@@ -167,7 +165,7 @@ async function run(): Promise<void> {
     const info = getInfo(projectPath, targetInfo, configArg);
     core.setOutput('appVersion', info.version);
 
-    // Other steps may benfit from this so we do this whether or not we want to upload it.
+    // Other steps may benefit from this so we do this whether or not we want to upload it.
     if (targetInfo.platform === 'macos') {
       let i = 0;
       for (const artifact of artifacts) {
@@ -197,6 +195,9 @@ async function run(): Promise<void> {
       }
     }
 
+    // If releaseId is set we'll use this to upload the assets to.
+    // If tagName is set we will try to upload assets to the release associated with the given tagName.
+    // If there's no release for that tag, we require releaseName to create a new one.
     if (tagName && !releaseId) {
       const templates = [
         {
@@ -212,11 +213,11 @@ async function run(): Promise<void> {
         body = body.replace(regex, template.value);
       });
 
-      const releaseData = await createRelease(
+      const releaseData = await getOrCreateRelease(
         owner,
         repo,
         tagName,
-        releaseName,
+        releaseName || undefined,
         body,
         commitish || undefined,
         draft,
